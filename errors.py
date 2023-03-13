@@ -1,0 +1,2 @@
+class PopCardError(Exception):
+    pass
