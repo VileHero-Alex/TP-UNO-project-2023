@@ -2,6 +2,9 @@ from deck import DrawDeck, TableDeck
 from player import Player
 import json
 
+class Cheater(Exception):
+    pass
+
 class Table():
     def __init__(self, players: list):
         self.players = players
@@ -9,6 +12,13 @@ class Table():
         self.tableDeck = TableDeck()
         self.turn = 0
         self.isDirectionClockwise = True
+        self.startGame()
+
+    def startGame(self):
+        for player in self.players:
+            for i in range(7):
+                card = self.drawDeck.popTop()
+                player.deck.receiveCard(card)
     
     def reshuffle(self):
         if len(self.drawDeck) <= 1:
@@ -24,7 +34,17 @@ class Table():
             player.deck.recieve(card)
     
     def newTurn(self):
-        pass
+        for player in self.players:
+            player.update(self.gameInfo())
+        play = self.players[self.turn].handleTurn(self.gameInfo())
+        if play not in self.players[self.turn].deck.cards:
+            raise(Cheater)
+        card = Card(play)
+        if card.color == "black":
+            self.selectColor()
+            if card.type == "+4":
+                pass
+                
     
     def selectColor(self):
         color = self.players[self.turn].chooseColor()
@@ -49,7 +69,9 @@ class Table():
             "isDirectionClockwise": self.isDirectionClockwise,
         }
         return json.dumps(my_dict)
-        
+    
+    def updatePlayers(self):
+        pass
 
 if __name__ == "__main__":
     table = Table()
