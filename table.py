@@ -27,10 +27,11 @@ class Table():
         pass
     
     def selectColor(self):
-        pass
+        color = self.players[self.turn].chooseColor()
+        self.tableDeck.changeTopCardColor(color)
     
     def changeDirection(self):
-        pass
+        self.isDirectionClockwise = not self.isDirectionClockwise
     
     def gameInfo(self):
         players_info = []
