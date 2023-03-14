@@ -5,6 +5,8 @@ import json
 class Cheater(Exception):
     pass
 
+class 
+
 class Table():
     def __init__(self, players: list):
         self.players = players
@@ -32,26 +34,49 @@ class Table():
             self.reshuffle()
             card = self.drawDeck.popTop()
             player.deck.recieve(card)
+        self.turn = self.nextTurn()
     
-    def newTurn(self):
-        for player in self.players:
-            player.update(self.gameInfo())
+    def gameUpdate(self):
+        self.updatePlayers()
         play = self.players[self.turn].handleTurn(self.gameInfo())
         if play not in self.players[self.turn].deck.cards:
             raise(Cheater)
         card = Card(play)
+        next_player = self.nextTurn()
         if card.color == "black":
             self.selectColor()
             if card.type == "+4":
-                pass
-                
+                self.draw(4, self.players[next_player])
+        elif card.color == self.tableDeck.topCard.color or card.type == self.tableDeck.topCard.type:
+            self.players[self.turn].deck.popCard(card.id)
+            self.tableDeck.receiveCard(card)
+            if card.type == "change":
+                self.changeDirection()
+            elif card.type == "+2":
+                self.draw(2, self.players[next_player])
+            elif card.type == "skip":
+                self.turn = self.nextTurn()
+        elif card.id == 108:
+            new_card = self.tableDeck.popTop()
+            self.player[self.turn].deck.receiveCard(new_card)
+        self.turn = self.nextTurn()
+
     
     def selectColor(self):
         color = self.players[self.turn].chooseColor()
         self.tableDeck.changeTopCardColor(color)
+        self.updatePlayers()
     
     def changeDirection(self):
         self.isDirectionClockwise = not self.isDirectionClockwise
+    
+    def nextTurn(self):
+        if self.isDirectionClockwise:
+            next_player = (self.turn + 1) % len(self.players)
+        else:
+            next_player = (self.turn + len(self.players) - 1) % len(self.players)
+        return next_player
+
     
     def gameInfo(self):
         players_info = []
@@ -71,7 +96,8 @@ class Table():
         return json.dumps(my_dict)
     
     def updatePlayers(self):
-        pass
+        for player in self.players:
+            player.update(self.gameInfo())
 
 if __name__ == "__main__":
     table = Table()
