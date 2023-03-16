@@ -76,7 +76,6 @@ class Server():
         print("[SERVER STARTUP] server is running on {}:{}".format(self.host, self.port))
         
     def wait_for_connections(self):
-        print("I WAIT")
         while True:
             conn, addr = self.socket.accept()
             self.clients.append(ClientFromSocket(conn))
@@ -89,12 +88,6 @@ if __name__ == '__main__':
 
     server = Server(SERVER, port)
     port = server.port
-    client = ClientFromAddress(SERVER, port)
-    time.sleep(1)
-
-    client.send("send nudes")
-    client.send("plz")
-    client.send("i'm begin")
     
     while True:
         for client in server.clients:
