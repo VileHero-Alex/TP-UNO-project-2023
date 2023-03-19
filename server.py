@@ -5,7 +5,8 @@ from constants import *
 from collections import deque
 
 class Client:
-    def __init__(self):
+    def __init__(self, deque_lock: threading.Lock):
+        self.deque_lock = deque_lock
         self.deque = deque()
         self.thread = threading.Thread(target=self.wait_for_messages)
         self.thread.start()
@@ -40,8 +41,16 @@ class Client:
             if msg:
                 if msg == DISCONNECT_MESSAGE:
                     connected = False
-                self.deque.append(msg)
+                self.deque_append(msg)
         self.conn.close()
+    
+    def deque_append(self, msg):
+        with self.deque_lock:
+            self.deque.append(msg)
+    
+    def deque_popleft(self):
+        with self.deque_lock:
+            return self.deque.popleft()
 
 class ClientFromSocket(Client):
     def __init__(self, conn: socket.socket):
@@ -84,6 +93,7 @@ class Server():
 
 
 if __name__ == '__main__':
+    deque_lock = threading.Lock()
     port = 5050
 
     server = Server(SERVER, port)
@@ -92,5 +102,5 @@ if __name__ == '__main__':
     while True:
         for client in server.clients:
             while len(client.deque) > 0:
-                message = client.deque.popleft()
+                message = client.deque_popleft()
                 print(client.name, ": ", message, sep='')
