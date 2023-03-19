@@ -5,9 +5,17 @@ from constants import *
 from collections import deque
 
 class Client:
-    def __init__(self, deque_lock: threading.Lock):
+    def __init__(self, deque_lock: threading.Lock, *, conn=None, server=None, port=None, name=''):
         self.deque_lock = deque_lock
         self.deque = deque()
+        if conn:
+            self.conn = conn
+            self.name = self.receive()
+        else:
+            self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.conn.connect((server, port))
+            self.send(name)
+            print("[CLIENT STARTUP] client is connected to {}:{}".format(server, port))
         self.thread = threading.Thread(target=self.wait_for_messages)
         self.thread.start()
         
@@ -59,22 +67,23 @@ class ClientFromSocket(Client):
         super().__init__()
 
 class ClientFromAddress(Client):
-    def __init__(self, host: str, port: str, name=''):
+    def __init__(self, server: str, port: str, name=''):
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.conn.connect((host, port))
+        self.conn.connect((server, port))
         self.send(name)
-        print("[CLIENT STARTUP] client is connected to {}:{}".format(host, port))
+        print("[CLIENT STARTUP] client is connected to {}:{}".format(server, port))
         super().__init__()
 
 
 class Server():
-    def __init__(self, host, port):
-        self.host = host
-        self.port = port
+    def __init__(self, deque_lock, server, port):
+        self.server = server
+        self.port = 5050
+        self.deque_lock = deque_lock
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         while True:
             try:
-                self.socket.bind((self.host, self.port))
+                self.socket.bind((self.server, self.port))
                 break
             except OSError:
                 self.port += 1
@@ -82,12 +91,12 @@ class Server():
         self.socket.listen(1)
         self.thread = threading.Thread(target=self.wait_for_connections)
         self.thread.start()
-        print("[SERVER STARTUP] server is running on {}:{}".format(self.host, self.port))
+        print("[SERVER STARTUP] server is running on {}:{}".format(self.server, self.port))
         
     def wait_for_connections(self):
         while True:
             conn, addr = self.socket.accept()
-            self.clients.append(ClientFromSocket(conn))
+            self.clients.append(Client(self.deque_lock, conn=conn))
             print(f"[NEW CONNECTION] {addr} connected.")
             print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 3}")
 
@@ -96,7 +105,7 @@ if __name__ == '__main__':
     deque_lock = threading.Lock()
     port = 5050
 
-    server = Server(SERVER, port)
+    server = Server(deque_lock, SERVER, port)
     port = server.port
     
     while True:
