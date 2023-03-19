@@ -4,8 +4,8 @@ from errors import PopCardError
 
 
 class Deck:
-    def __init__(self, cards):
-        self.cards = cards
+    def __init__(self):
+        self.cards = []
 
     def __len__(self):
         return len(self.cards)
@@ -22,6 +22,10 @@ class Deck:
 
 
 class DrawDeck(Deck):
+    def __init__(self):
+        self.cards = [i for i in range(108)]
+        self.shuffle()
+
     def shuffle(self):
         random.shuffle(self.cards)
     
