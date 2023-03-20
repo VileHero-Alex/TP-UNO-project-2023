@@ -4,9 +4,7 @@ from card import Card
 import json
 import random
 import time
-
-class IllegalMove(Exception):
-    pass
+from errors import IllegalMove
 
 class Table():
     def __init__(self, players: list):
