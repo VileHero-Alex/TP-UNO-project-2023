@@ -7,8 +7,9 @@ class Card:
 
     def cardIdentificator(self, id):
         color_pool = ["red", "yellow", "green", "blue", "black"]
-        type_pool = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "skip", "reverse", "+2", "choose", "+4", "uno", "draw"]
-        
+        type_pool = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "skip", "reverse", "+2"]
+        type_pool_extra = ["uno", "draw", "red", "yellow", "green", "blue"]
+
         color = color_pool[id // 25]
         
         if id % 25 == 0 and id != 100:
@@ -17,10 +18,8 @@ class Card:
             type = "+4"
         elif 100 <= id <= 103:
             type = "choose"
-        elif id == 108:
-            type = "uno"
-        elif id == 109:
-            type = "draw"
+        elif id >= 108:
+            type = type_pool_extra[id - 108]
         else:
             type = type_pool[(id % 25 + 1) // 2] 
 
