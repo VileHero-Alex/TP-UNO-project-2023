@@ -10,14 +10,14 @@ class Deck:
     def __len__(self):
         return len(self.cards)
     
-    def popCard(self, pop_card_id):
+    def pop_card(self, pop_card_id):
         try:
             self.cards.remove(pop_card_id)
             return pop_card_id
         except:
             raise PopCardError("illegal move: there is no card that you are looking for!")
 
-    def receiveCard(self, receive_card_id):
+    def receive_card(self, receive_card_id):
         self.cards.append(receive_card_id)
 
 
@@ -29,11 +29,11 @@ class DrawDeck(Deck):
     def shuffle(self):
         random.shuffle(self.cards)
     
-    def popTop(self):
-        received_card_id = self.popCard(self.cards[0])
+    def pop_top(self):
+        received_card_id = self.pop_card(self.cards[0])
         return received_card_id
 
-    def isEmpty(self):
+    def is_empty(self):
         return len(self.cards) == 0
 
 class TableDeck(Deck):
@@ -41,7 +41,9 @@ class TableDeck(Deck):
         super().__init__()
         self.top_color = None
 
-    def showLast(self):
+    def show_last(self):
+        if self.is_empty():
+            return None
         return self.cards[-1]
     
     def clear(self):
@@ -54,14 +56,15 @@ class TableDeck(Deck):
 
 class PlayerDeck(Deck):
     def __init__(self):
-        self.cards = [108, 109] # 'uno' and 'draw' cards
+        scr = Card.system_card_range()
+        self.cards = [i for i in range(scr[0], scr[1])] # system cards
 
     def sort(self):
         self.cards.sort()
 
-    def throwCard(self, throw_card_id):
+    def throw_card(self, throw_card_id):
         try:
-            return self.popCard(throw_card_id)
+            return self.pop_card(throw_card_id)
         except PopCardError as err:
             print(err, " Try again.")
             return -1
