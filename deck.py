@@ -52,6 +52,10 @@ class TableDeck(Deck):
         removed_cards = self.cards.copy()
         self.cards = [last_card_id]
         return removed_cards
+    
+    def receive_card(self, receive_card_id):
+        self.top_color = Card(receive_card_id).color
+        self.cards.append(receive_card_id)
 
 
 class PlayerDeck(Deck):
