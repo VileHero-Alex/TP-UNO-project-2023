@@ -60,20 +60,6 @@ class Client:
         with self.deque_lock:
             return self.deque.popleft()
 
-class ClientFromSocket(Client):
-    def __init__(self, conn: socket.socket):
-        self.conn = conn
-        self.name = self.receive()
-        super().__init__()
-
-class ClientFromAddress(Client):
-    def __init__(self, server: str, port: str, name=''):
-        self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.conn.connect((server, port))
-        self.send(name)
-        print("[CLIENT STARTUP] client is connected to {}:{}".format(server, port))
-        super().__init__()
-
 
 class Server():
     def __init__(self, deque_lock, server, port):
