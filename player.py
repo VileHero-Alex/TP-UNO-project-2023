@@ -8,6 +8,7 @@ class Player(Client):
         super().__init__()
         self.id = hash(name)
         self.deck = PlayerDeck()
+        self.said_uno = False
 
 class Bot(Player):
     def update(self, info):
