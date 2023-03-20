@@ -37,6 +37,10 @@ class DrawDeck(Deck):
         return len(self.cards) == 0
 
 class TableDeck(Deck):
+    def __init__(self):
+        super().__init__()
+        self.top_color = None
+
     def showLast(self):
         return self.cards[-1]
     
@@ -49,6 +53,9 @@ class TableDeck(Deck):
 
 
 class PlayerDeck(Deck):
+    def __init__(self):
+        self.cards = [108, 109] # 'uno' and 'draw' cards
+
     def sort(self):
         self.cards.sort()
 
