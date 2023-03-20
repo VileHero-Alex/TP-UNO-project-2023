@@ -47,8 +47,10 @@ class Table():
                     continue
                 try:
                     self.make_move(player_id, card)
+                    if len(self.players[player_id].deck) == 0:
+                        self.end_game(player_id)
                 except IllegalMove:
-                    self.players[player_id].send("IllegalMove") # TODO
+                    self.update_player(player_id, error="Illegal move") # TODO
                 
     def make_move(self, player_id: int, card: int):
         color_pool = ["red", "yellow", "green", "blue", "black"]
@@ -112,21 +114,17 @@ class Table():
                     self.draw(player_id, 2)
             else:
                 raise IllegalMove("IllegalMove")
-        
-        
+            
+        self.update_players()
             
     
     def lay_card(self, player_id, card):
         self.players[player_id].deck.throw_card(card.id)
         self.tableDeck.receive_card(card.id)
 
-    def end_game(self):
-        pass
-
-    def select_color(self):
-        color = self.players[self.turn].chooseColor()
-        self.tableDeck.changeTopCardColor(color)
-        self.updatePlayers()
+    def end_game(self, player_id):
+        self.update_players(winner_id=player_id)
+        self.runnning = False
     
     def change_direction(self):
         self.is_direction_clockwise = not self.is_direction_clockwise
@@ -145,26 +143,48 @@ class Table():
         return next_player
 
     
-    def game_info(self):
+    def update_player(self, player_id, *, winner_id=None, error=None):
         players_info = []
-        for player in self.players:
+        for player_id in range(len(self.players)):
+            player = self.players[player_id]
             info = {
+                "turn_id": player_id,
                 "id": player.id,
                 "name": player.name,
                 "cards_amount": len(player.deck)
             }
             players_info.append(info)
+
         my_dict = {
-            "top_card": self.tableDeck.showLast.id,
+            "top_card_id": self.tableDeck.showLast.id,
+            "top_card_color": self.tableDeck.top_color,
             "players": players_info,
             "turn": self.turn,
             "is_direction_clockwise": self.is_direction_clockwise,
+            "my_cards": self.players[player_id].cards
         }
-        return json.dumps(my_dict)
+        if winner_id:
+            my_dict_final = {
+                "ok": True,
+                "status": "finished",
+                "winner": players_info[winner_id],
+            }
+        elif error:
+            my_dict_final = {
+                "ok": False,
+                "error": str(error)
+            }
+        else:
+            my_dict_final = {
+                "ok": True,
+                "status": "running",
+                "info": my_dict
+            }
+        self.players[player].send(json.dumps(my_dict_final))
     
-    def updatePlayers(self):
-        for player in self.players:
-            player.update(self.game_info())
+    def update_players(self, winner_id=None):
+        for player_id in range(len(self.players)):
+            self.update_player(player_id, winner_id=winner_id)
 
 if __name__ == "__main__":
     table = Table()
