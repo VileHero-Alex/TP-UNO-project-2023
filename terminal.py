@@ -1,4 +1,6 @@
-import random
+from big_fucking_file import *
+
+'''import random
 import socket
 import threading
 from collections import deque
@@ -12,13 +14,13 @@ from card import Card
 from deck import PlayerDeck, TableDeck, DrawDeck
 from server import Client, Server
 from player import Player
-from table import Table
+from table import Table'''
 
 class TerminalInterface(Client):
     def __init__(self, deque_lock: threading.Lock, *, conn=None, server=None, port=None, name=''):
         super().__init__(deque_lock, conn=conn, server=server, port=port, name=name)
-        self.thread_listen = threading.Thread(self.listen_for_input)
-        self.thread_update = threading.Thread(self.listen_for_updates)
+        self.thread_listen = threading.Thread(target=self.listen_for_input)
+        self.thread_update = threading.Thread(target=self.listen_for_updates)
         self.running = True
         self.cards = []
         # self.thread_listen.start()
@@ -112,8 +114,8 @@ class TerminalInterface(Client):
 def host(name):
     server = Server(SERVER, port=5050)
     player = TerminalInterface(server.deque_lock, server=SERVER, port=PORT, name=name)
-    inp = input("type \"start\" when all players are connected")
-    while inp != input():
+    inp = input("type \"start\" when all players are connected\n")
+    while inp != "start":
         inp = input()
     player.thread_listen.start()
     table = Table(server.clients.copy())
@@ -125,10 +127,10 @@ def join(name):
 
 
 if __name__ == "__main__":
-    name = input("Type your name:")
-    inp = input("Would you like to host the game or join the game? (h/j)")
+    name = input("Type your name: ")
+    inp = input("Would you like to host the game or join the game? (h/j): ")
     while inp not in ['h', 'j']:
-        inp = input("Nope, h or j")
+        inp = input("Nope, h or j: ")
     if inp == "h":
         host(name)
     else:

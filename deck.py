@@ -60,11 +60,11 @@ class TableDeck(Deck):
 
 class PlayerDeck(Deck):
     def __init__(self):
-        scr = Card.system_card_range()
+        scr = Card.system_cards_range()
         self.cards = [i for i in range(scr[0], scr[1])] # system cards
     
     def __len__(self):
-        scr = Card.system_card_range()
+        scr = Card.system_cards_range()
         rng = scr[1] - scr[0]
         return len(self.cards) - rng
 
