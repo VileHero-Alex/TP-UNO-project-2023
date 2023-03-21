@@ -13,7 +13,7 @@ class Table():
         self.players = players
         self.drawDeck = DrawDeck()
         self.tableDeck = TableDeck()
-        self.tableDeck.recieve_card(self.tableDeck.pop_top())
+        self.tableDeck.receive_card(self.drawDeck.pop_top())
         self.turn = random.randint(0, len(players) - 1)
         self.is_direction_clockwise = True
         self.running = True
@@ -29,14 +29,14 @@ class Table():
         if len(self.drawDeck) <= 1:
             cards = self.tableDeck.clear()
             for card in cards:
-                self.drawDeck.recieve_card(card)
+                self.drawDeck.receive_card(card)
             self.drawDeck.shuffle()
     
     def draw(self, player: Player, amount: int) -> None:
         for i in range(amount):
             self.reshuffle()
             card = self.drawDeck.pop_top()
-            player.deck.recieve(card)
+            player.deck.receive(card)
         self.turn = self.next_turn()
     
     def listen(self):

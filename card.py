@@ -9,7 +9,7 @@ class Card:
         self.color = color
         self.type = type
 
-    def card_identificator(id):
+    def card_identificator(self, id):
         color = Card.color_pool[id // 25]
         
         if id % 25 == 0 and id != 100:
