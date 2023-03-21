@@ -1,6 +1,6 @@
 class Card:
     color_pool = ["red", "yellow", "green", "blue", "black"]
-    type_pool = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "skip", "reverse", "+2"]
+    type_pool = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "skip", "reverse", "+2", "choose", "+4"]
     type_pool_extra = ["uno", "draw", "red", "yellow", "green", "blue"]
 
     def __init__(self, id):
@@ -10,11 +10,7 @@ class Card:
         self.type = type
 
     def card_identificator(id):
-        color_pool = ["red", "yellow", "green", "blue", "black"]
-        type_pool = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "skip", "reverse", "+2"]
-        type_pool_extra = ["uno", "draw", "red", "yellow", "green", "blue"]
-
-        color = color_pool[id // 25]
+        color = Card.color_pool[id // 25]
         
         if id % 25 == 0 and id != 100:
             type = "0"
@@ -23,9 +19,9 @@ class Card:
         elif 100 <= id <= 103:
             type = "choose"
         elif id >= 108:
-            type = type_pool_extra[id - 108]
+            type = Card.type_pool_extra[id - 108]
         else:
-            type = type_pool[(id % 25 + 1) // 2] 
+            type = Card.type_pool[(id % 25 + 1) // 2] 
 
         return (color, type)
 
