@@ -1,4 +1,8 @@
 class Card:
+    color_pool = ["red", "yellow", "green", "blue", "black"]
+    type_pool = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "skip", "reverse", "+2"]
+    type_pool_extra = ["uno", "draw", "red", "yellow", "green", "blue"]
+
     def __init__(self, id):
         self.id = id
         color, type = self.card_identificator(id)
@@ -30,5 +34,4 @@ class Card:
 
 
 if __name__ == "__main__":
-    for i in range(110):
-        print(i, Card(i).type, Card(i).color)
+    print(Card.color_pool)
