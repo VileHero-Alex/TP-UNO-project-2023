@@ -23,6 +23,44 @@ class TerminalInterface(Client):
         self.cards = []
         # self.thread_listen.start()
         self.thread_update.start()
+    
+    def listen_for_updates(self):
+        while True:
+            event = self.deque_popleft()
+            while event:
+                self.print_update(event)
+                event = self.deque_popleft()
+
+    def print_update(self, event):
+        event = json.loads(event)
+        if not event["ok"]:
+            print(event["error"])
+            return
+        if event["status"] == "finished":
+            print(f"Player {event['winnner']['name']} won!")
+            return
+        
+        for player in event["info"]["players"]:
+            print(f"{player['turn_id'] + 1}. {player['name']}: {player['cards_amount']} cards")
+        card_id = event['info']['top_card_id']
+        color = event['info']['top_card_color']
+        print(f"Last played card: {Card(card_id).type}, {color}")
+
+        turn = event['info']['top_card_color']['turn']
+        if turn == "you":
+            print("It's your turn.", end=" ")
+        else:
+            print(f"It's {event['info']['players'][turn]['name']}\'s turn.", end='')
+        if event['info']['is_direction_clockwise']:
+            print("The direction is clockwise")
+        else:
+            print("The direction is COUNTERclockwise")
+        print()
+        print("Your cards:")
+        for card in event['info']['my_cards']:
+            print(self.card_to_human(card), end=', ')
+        print()
+
 
     def listen_for_input(self):
         while True:
@@ -71,25 +109,27 @@ class TerminalInterface(Client):
 
             
 
-def host():
+def host(name):
     server = Server(SERVER, port=5050)
-    player = TerminalInterface(server.deque_lock, server=SERVER, port=PORT)
+    player = TerminalInterface(server.deque_lock, server=SERVER, port=PORT, name=name)
     inp = input("type \"start\" when all players are connected")
     while inp != input():
         inp = input()
     player.thread_listen.start()
     table = Table(server.clients.copy())
 
-def join():
+def join(name):
     lock = threading.Lock()
-    player = TerminalInterface(lock, server=SERVER, port=PORT)
+    player = TerminalInterface(lock, server=SERVER, port=PORT, name=name)
     player.thread_listen.start()
 
 
 if __name__ == "__main__":
+    name = input("Type your name:")
     inp = input("Would you like to host the game or join the game? (h/j)")
     while inp not in ['h', 'j']:
         inp = input("Nope, h or j")
     if inp == "h":
-        host()
-    join()
+        host(name)
+    else:
+        join(name)

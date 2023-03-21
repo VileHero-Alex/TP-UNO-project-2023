@@ -57,8 +57,11 @@ class Client:
             self.deque.append(msg)
     
     def deque_popleft(self):
-        with self.deque_lock:
-            return self.deque.popleft()
+        try:
+            with self.deque_lock:
+                return self.deque.popleft()
+        except IndexError:
+            return None
 
 
 class Server():

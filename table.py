@@ -43,19 +43,21 @@ class Table():
         while self.running:
             for player_id in len(self.players):
                 event = self.players[player_id].deque_popleft()
-                try:
-                    card = int(event)
-                except Exception as e:
-                    print(e)
-                    continue
-                try:
-                    self.make_move(player_id, card)
-                    if len(self.players[player_id].deck) == 0:
-                        self.end_game(player_id)
-                    else:
-                        self.update_players()
-                except IllegalMove:
-                    self.update_player(player_id, error="Illegal move") # TODO
+                while event:
+                    try:
+                        card = int(event)
+                    except Exception as e:
+                        print(e)
+                        continue
+                    try:
+                        self.make_move(player_id, card)
+                        if len(self.players[player_id].deck) == 0:
+                            self.end_game(player_id)
+                        else:
+                            self.update_players()
+                    except IllegalMove:
+                        self.update_player(player_id, error="Illegal move")
+                    event = self.players[player_id].deque_popleft()
                 
     def make_move(self, player_id: int, card: int):
         card = Card(card)
@@ -158,7 +160,7 @@ class Table():
             "top_card_id": self.tableDeck.showLast.id,
             "top_card_color": self.tableDeck.top_color,
             "players": players_info,
-            "turn": self.turn,
+            "turn": "you" if player_id == self.turn else self.turn,
             "is_direction_clockwise": self.is_direction_clockwise,
             "my_cards": self.players[player_id].cards
         }
