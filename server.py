@@ -1,8 +1,8 @@
 import socket
 import threading
-import time
 from constants import *
 from collections import deque
+from player import Player
 
 class Client:
     def __init__(self, deque_lock: threading.Lock, *, conn=None, server=None, port=None, name=''):
@@ -62,10 +62,13 @@ class Client:
 
 
 class Server():
-    def __init__(self, deque_lock, server, port):
+    def __init__(self, server, port, deque_lock=None):
         self.server = server
-        self.port = 5050
-        self.deque_lock = deque_lock
+        self.port = port
+        if deque_lock:
+            self.deque_lock = deque_lock
+        else:
+            self.deque_lock = threading.Lock()
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         while True:
             try:
@@ -82,16 +85,14 @@ class Server():
     def wait_for_connections(self):
         while True:
             conn, addr = self.socket.accept()
-            self.clients.append(Client(self.deque_lock, conn=conn))
+            self.clients.append(Player(self.deque_lock, conn=conn))
             print(f"[NEW CONNECTION] {addr} connected.")
-            print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 3}")
+            # print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 2}")
 
 
 if __name__ == '__main__':
-    deque_lock = threading.Lock()
     port = 5050
-
-    server = Server(deque_lock, SERVER, port)
+    server = Server(SERVER, port)
     port = server.port
     
     while True:
