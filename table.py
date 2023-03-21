@@ -21,6 +21,7 @@ class Table():
             for i in range(7):
                 card = self.drawDeck.pop_top()
                 player.deck.receive_card(card)
+        self.update_players()
         self.thread = threading.Thread(self.listen)
         self.thread.start()
     
