@@ -58,15 +58,11 @@ class Table():
                     self.update_player(player_id, error="Illegal move") # TODO
                 
     def make_move(self, player_id: int, card: int):
-        color_pool = ["red", "yellow", "green", "blue", "black"]
-        type_pool = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "skip", "reverse", "+2"]
-        type_pool_extra = ["uno", "draw", "red", "yellow", "green", "blue"]
-        
         card = Card(card)
         if card not in self.players[player_id].deck.cards:
             return
         if player_id == self.turn:
-            if card.type in type_pool_extra:
+            if card.type in Card.type_pool_extra:
                 if card.type == "uno":
                     self.players[player_id].said_uno = True
                     self.players[player_id].time_since_uno = time.time()
@@ -75,7 +71,7 @@ class Table():
                     self.draw(self.players[player_id], 1)
                     self.turn = self.next_turn()
 
-                elif card.type in type_pool_extra and self.tableDeck.top_color == "black":
+                elif card.type in Card.type_pool_extra and self.tableDeck.top_color == "black":
                     self.tableDeck.top_color = card.type
                     self.turn = self.next_turn()
 
