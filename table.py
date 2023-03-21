@@ -1,10 +1,12 @@
 from deck import DrawDeck, TableDeck
 from player import Player
 from card import Card
+from errors import IllegalMove
 import json
 import random
 import time
-from errors import IllegalMove
+import threading
+
 
 class Table():
     def __init__(self, players: list):
@@ -19,6 +21,8 @@ class Table():
             for i in range(7):
                 card = self.drawDeck.pop_top()
                 player.deck.receive_card(card)
+        self.thread = threading.Thread(self.listen)
+        self.thread.start()
     
     def reshuffle(self):
         if len(self.drawDeck) <= 1:
@@ -47,6 +51,8 @@ class Table():
                     self.make_move(player_id, card)
                     if len(self.players[player_id].deck) == 0:
                         self.end_game(player_id)
+                    else:
+                        self.update_players()
                 except IllegalMove:
                     self.update_player(player_id, error="Illegal move") # TODO
                 
@@ -112,8 +118,6 @@ class Table():
                     self.draw(player_id, 2)
             else:
                 raise IllegalMove("IllegalMove")
-            
-        self.update_players()
             
     
     def lay_card(self, player_id, card):
