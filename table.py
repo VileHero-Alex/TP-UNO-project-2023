@@ -13,6 +13,9 @@ class Table():
         self.players = players
         self.drawDeck = DrawDeck()
         self.tableDeck = TableDeck()
+        while Card(self.drawDeck.cards[0]).color == 'black':
+            self.drawDeck = DrawDeck()
+            print("Ooops)")
         self.tableDeck.receive_card(self.drawDeck.pop_top())
         self.turn = random.randint(0, len(players) - 1)
         self.is_direction_clockwise = True
@@ -22,7 +25,7 @@ class Table():
                 card = self.drawDeck.pop_top()
                 player.deck.receive_card(card)
         self.update_players()
-        self.thread = threading.Thread(self.listen)
+        self.thread = threading.Thread(target=self.listen)
         self.thread.start()
     
     def reshuffle(self):
@@ -36,12 +39,12 @@ class Table():
         for i in range(amount):
             self.reshuffle()
             card = self.drawDeck.pop_top()
-            player.deck.receive(card)
+            player.deck.receive_card(card)
         self.turn = self.next_turn()
     
     def listen(self):
         while self.running:
-            for player_id in len(self.players):
+            for player_id in range(len(self.players)):
                 event = self.players[player_id].deque_popleft()
                 while event:
                     try:
@@ -61,8 +64,9 @@ class Table():
                 
     def make_move(self, player_id: int, card: int):
         card = Card(card)
-        if card not in self.players[player_id].deck.cards:
-            return
+        if card.id not in self.players[player_id].deck.cards:
+            print(self.players[player_id].deck.cards, card)
+            raise IllegalMove("Illegal move")
         if player_id == self.turn:
             if card.type in Card.type_pool_extra:
                 if card.type == "uno":
@@ -85,7 +89,7 @@ class Table():
             elif card.type == "choose":
                 self.lay_card(player_id, card)
 
-            elif card.color == self.tableDeck.top_color or self.tableDeck.show_last().type == card.type:
+            elif card.color == self.tableDeck.top_color or Card(self.tableDeck.show_last()).type == card.type:
                 self.lay_card(player_id, card)
                 if card.type == "skip":
                     self.turn = self.next_turn()
@@ -102,7 +106,7 @@ class Table():
             else:
                 raise IllegalMove("IllegalMove")
         else:
-            if card.color == self.tableDeck.top_color and self.tableDeck.show_last().type == card.type and card.type in [str(i) for i in range(1, 10)]:
+            if card.color == self.tableDeck.top_color and Card(self.tableDeck.show_last()).type == card.type and card.type in [str(i) for i in range(1, 10)]:
                 self.lay_card(player_id, card)
                 self.turn = player_id
                 self.turn = self.next_turn()
@@ -157,12 +161,12 @@ class Table():
             players_info.append(info)
 
         my_dict = {
-            "top_card_id": self.tableDeck.showLast.id,
+            "top_card_id": self.tableDeck.show_last(),
             "top_card_color": self.tableDeck.top_color,
             "players": players_info,
             "turn": "you" if player_id == self.turn else self.turn,
             "is_direction_clockwise": self.is_direction_clockwise,
-            "my_cards": self.players[player_id].cards
+            "my_cards": self.players[player_id].deck.cards,
         }
         if winner_id:
             my_dict_final = {
