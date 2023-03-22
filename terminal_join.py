@@ -40,7 +40,7 @@ class TerminalInterface(Client):
             print(event["error"])
             return
         if event["status"] == "finished":
-            print(f"Player {event['winnner']['name']} won!")
+            print(f"Player {event['winner']['name']} won!")
             return
         
         for player in event["info"]["players"]:

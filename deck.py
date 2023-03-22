@@ -60,11 +60,11 @@ class TableDeck(Deck):
 
 class PlayerDeck(Deck):
     def __init__(self):
-        scr = Card.system_cards_range()
+        scr = Card.system_cards_range
         self.cards = [i for i in range(scr[0], scr[1])] # system cards
     
     def __len__(self):
-        scr = Card.system_cards_range()
+        scr = Card.system_cards_range
         rng = scr[1] - scr[0]
         return len(self.cards) - rng
 
@@ -77,3 +77,19 @@ class PlayerDeck(Deck):
         except PopCardError as err:
             print(err, " Try again.")
             return -1
+    
+    def can_play(self, top_id, top_color):
+        top_card = Card(top_id)
+        for card_id in self.cards:
+            card = Card(card_id)
+            if card.type == "+4":
+                continue
+            if card.color == top_color or card.type == top_card.type:
+                return True
+        return False
+    
+    def has_plus(self, type: str): # '+2' or '+4' should be passed
+        for card_id in self.cards:
+            if Card(card_id).type == type:
+                return True
+        return False

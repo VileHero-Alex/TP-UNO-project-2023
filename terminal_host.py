@@ -36,11 +36,11 @@ class TerminalInterface(Client):
     def print_update(self, event):
         event = json.loads(event)
         print("------------------------------------------")
-        if not event["ok"]:
+        if "error" in event:
             print(event["error"])
             return
         if event["status"] == "finished":
-            print(f"Player {event['winnner']['name']} won!")
+            print(f"Player {event['winner']['name']} won!")
             return
         
         for player in event["info"]["players"]:
@@ -62,7 +62,8 @@ class TerminalInterface(Client):
         print("Your cards:")
         self.cards = event['info']['my_cards']
         self.cards.sort()
-        for card in self.cards[:-6]:
+        src = Card.system_cards_range
+        for card in self.cards[:src[0] - src[1]]:
             print(self.card_to_human(card), end=', ')
         print()
 
@@ -116,7 +117,8 @@ class TerminalInterface(Client):
             
 
 def host(name):
-    server = Server(SERVER, port=5050)
+    print(SERVER)
+    server = Server(SERVER, port=PORT)
     player = TerminalInterface(server.deque_lock, server=SERVER, port=PORT, name=name)
     inp = input("type \"start\" when all players are connected\n")
     while inp != "start":
@@ -131,4 +133,4 @@ def join(name):
 
 
 if __name__ == "__main__":
-    host("PLAYER 1")
+    host("Kolya")

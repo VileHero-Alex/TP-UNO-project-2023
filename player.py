@@ -13,7 +13,7 @@ class Player(Client):
     def reinit(self):
         self.deck = PlayerDeck()
         self.said_uno = False
-        self.time_since_uno = time.time()
+        self.is_choosing = False
 
 class Bot(Player):
     def update(self, info):

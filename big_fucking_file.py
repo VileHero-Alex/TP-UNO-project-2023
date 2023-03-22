@@ -12,7 +12,7 @@ HEADER = 64
 PORT = 5050
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "beep boop, disconnected"
-SERVER = "localhost"
+SERVER = "192.168.50.17"
 
 
 class Card:
@@ -255,12 +255,13 @@ class Table():
                 self.drawDeck.receive_card(card)
             self.drawDeck.shuffle()
     
-    def draw(self, player: Player, amount: int) -> None:
+    def draw(self, player: int, amount: int) -> None:
         for i in range(amount):
             self.reshuffle()
             card = self.drawDeck.pop_top()
-            player.deck.receive_card(card)
-        self.turn = self.next_turn()
+            self.players[player].deck.receive_card(card)
+        if len(self.players[player].deck) >= 2:
+            self.players[player].said_uno = False
     
     def listen(self):
         while self.running:
@@ -294,7 +295,7 @@ class Table():
                     self.players[player_id].time_since_uno = time.time()
 
                 elif card.type == "draw":
-                    self.draw(self.players[player_id], 1)
+                    self.draw(player_id, 1)
                     self.turn = self.next_turn()
 
                 elif card.type in Card.type_pool_extra and self.tableDeck.top_color == "black":
@@ -304,7 +305,7 @@ class Table():
                         self.turn = self.next_turn()
 
             elif card.type == "+4":
-                self.draw(self.players[self.next_turn()], 4)
+                self.draw(self.next_turn(), 4)
                 self.lay_card(player_id, card)
                 
             elif card.type == "choose":
@@ -319,15 +320,15 @@ class Table():
                     self.change_direction()
 
                 elif card.type == "+2":
-                    next_player = self.next_turn()
-                    self.draw(self.players[next_player], 2)
+                    self.draw(self.next_turn(), 2)
+                    self.turn = self.next_turn()
 
                 self.turn = self.next_turn()
 
             else:
                 raise IllegalMove("IllegalMove")
         else:
-            if card.color == self.tableDeck.top_color and Card(self.tableDeck.show_last()).type == card.type and card.type in [str(i) for i in range(1, 10)]:
+            if card.color == self.tableDeck.top_color and Card(self.tableDeck.show_last()).type == card.type and card.type in Card.type_pool[:-2]:
                 self.lay_card(player_id, card)
                 self.turn = player_id
                 self.turn = self.next_turn()
@@ -346,6 +347,8 @@ class Table():
     
     def lay_card(self, player_id, card):
         self.players[player_id].deck.throw_card(card.id)
+        if len(self.players[player_id].deck) >= 2:
+            self.players[player_id].said_uno = False
         self.tableDeck.receive_card(card.id)
 
     def end_game(self, player_id):
