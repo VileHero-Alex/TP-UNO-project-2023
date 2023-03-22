@@ -131,12 +131,4 @@ def join(name):
 
 
 if __name__ == "__main__":
-    '''name = input("Type your name: ")
-    inp = input("Would you like to host the game or join the game? (h/j): ")
-    while inp not in ['h', 'j']:
-        inp = input("Nope, h or j: ")'''
-    inp = 'h'
-    if inp == "h":
-        host('kolya')
-    else:
-        join('kolya')
+    join("PLAYER 2")

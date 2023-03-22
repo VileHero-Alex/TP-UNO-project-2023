@@ -241,7 +241,7 @@ class Table():
         self.is_direction_clockwise = True
         self.running = True
         for player in self.players:
-            for i in range(7):
+            for i in range(3):
                 card = self.drawDeck.pop_top()
                 player.deck.receive_card(card)
         self.update_players()
@@ -300,10 +300,11 @@ class Table():
                 elif card.type in Card.type_pool_extra and self.tableDeck.top_color == "black":
                     self.tableDeck.top_color = card.type
                     self.turn = self.next_turn()
+                    if Card(self.tableDeck.show_last()).type == "+4":
+                        self.turn = self.next_turn()
 
             elif card.type == "+4":
-                next_player = self.next_turn()
-                self.draw(self.players[next_player], 4)
+                self.draw(self.players[self.next_turn()], 4)
                 self.lay_card(player_id, card)
                 
             elif card.type == "choose":
@@ -368,7 +369,7 @@ class Table():
         return next_player
 
     
-    def update_player(self, player_id, *, winner_id=None, error=None):
+    def update_player(self, receiver_player_id, *, winner_id=None, error=None):
         players_info = []
         for player_id in range(len(self.players)):
             player = self.players[player_id]
@@ -384,9 +385,9 @@ class Table():
             "top_card_id": self.tableDeck.show_last(),
             "top_card_color": self.tableDeck.top_color,
             "players": players_info,
-            "turn": "you" if player_id == self.turn else self.turn,
+            "turn": "you" if receiver_player_id == self.turn else self.turn,
             "is_direction_clockwise": self.is_direction_clockwise,
-            "my_cards": self.players[player_id].deck.cards,
+            "my_cards": self.players[receiver_player_id].deck.cards,
         }
         if winner_id:
             my_dict_final = {
@@ -406,7 +407,7 @@ class Table():
                 "info": my_dict
             }
         # pp.pprint(my_dict_final)
-        self.players[player_id].send(json.dumps(my_dict_final))
+        self.players[receiver_player_id].send(json.dumps(my_dict_final))
     
     def update_players(self, winner_id=None):
         for player_id in range(len(self.players)):
