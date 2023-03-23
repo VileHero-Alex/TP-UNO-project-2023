@@ -314,13 +314,12 @@ class Table():
                 while event:
                     try:
                         self.make_move(player_id, event)
-                        if len(self.players[player_id].deck) == 0:
-                            self.end_game(player_id)
-                        else:
-                            self.update_players()
+                        self.update_players()
+                        self.end_game()
                     except Exception as e:
                         self.update_player(player_id, error=str(e))
                     event = self.players[player_id].deque_popleft()
+        self.thread.join()
                 
     def make_move(self, player_id: int, event: str):
         card = Card(int(event))
@@ -331,14 +330,14 @@ class Table():
             if len(self.players[self.previous_turn()].deck) == 1 and not self.players[self.previous_turn()].said_uno:
                 if player_id == self.previous_turn():
                     self.players[player_id].said_uno = True
-                    self.update_players(announcement=f"Player {self.turn + 1} said UNO")
+                    self.update_players(announcement=f"Player {player_id + 1} said UNO")
                     return
                 self.draw(self.previous_turn(), 2)
                 self.update_players(announcement=f"{self.previous_turn()} was penalized for not saying UNO")
                 return
             elif self.turn == player_id and len(self.players[player_id].deck) == 1 and not self.players[self.previous_turn()].said_uno:
                 self.players[player_id].said_uno = True
-                self.update_players(announcement=f"Player {self.turn + 1} said UNO")
+                self.update_players(announcement=f"Player {player_id + 1} said UNO")
                 return
         if card.id < Card.system_cards_range[0] + 2 and self.players[player_id].is_choosing:
             raise IllegalMove("You need to choose color / accept or challenge / player to swap decks with")
@@ -371,7 +370,7 @@ class Table():
                         raise IllegalMove("You can't use that now")
                     self.players[player_id].is_choosing = False
                     if card.type == "challenge":
-                        self.update_players(announcement=f"{player_id} challenges {self.previous_turn}")
+                        self.update_players(announcement=f"Player {player_id + 1} challenges Player {self.previous_turn() + 1}")
                         self.update_player(player_id, show_cards=self.previous_turn())
                         if self.players[self.previous_turn()].deck.can_play(self.tableDeck.show_before_last(), self.tableDeck.last_top_color):
                             self.update_players(announcement=f"Challenge succesful")
@@ -440,7 +439,7 @@ class Table():
                 elif card.type == "+2":
                     self.turn = self.next_turn()
                     self.draw(self.turn, 2)
-                elif card.type == "0" and self.seven_zero:
+                elif card.type == "0" and self.seven_zero and len(self.players[player_id].deck) != 0:
                     self.zero()
                 if card.type == "7" and self.seven_zero:
                     self.players[player_id].is_choosing = True
@@ -462,9 +461,13 @@ class Table():
             self.players[player_id].said_uno = False
         self.tableDeck.receive_card(card.id)
 
-    def end_game(self, player_id):
-        self.update_players(winner_id=player_id)
-        self.runnning = False
+    def end_game(self):
+        print([len(player.deck) for player in self.players])
+        for player_id in range(len(self.players)):
+            if len(self.players[player_id].deck) == 0:
+                self.update_players(winner_id=player_id)
+                self.running = False
+
     
     def change_direction(self):
         self.is_direction_clockwise = not self.is_direction_clockwise

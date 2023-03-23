@@ -23,11 +23,12 @@ class TerminalInterface(Client):
         self.thread_update = threading.Thread(target=self.listen_for_updates)
         self.running = True
         self.cards = []
+        self.running = True
         # self.thread_listen.start()
         self.thread_update.start()
     
     def listen_for_updates(self):
-        while True:
+        while self.running:
             event = self.deque_popleft()
             while event:
                 self.print_update(event)
@@ -50,9 +51,11 @@ class TerminalInterface(Client):
                 print(self.card_to_human(card), end=', ')
             print()
             return
-
-        if event["status"] == "finished":
+        if "winner" in event:
             print(f"Player {event['winner']['name']} won!")
+            self.thread_listen.join()
+            self.thread_update.join()
+            self.running = False
             return
         for player in event["info"]["players"]:
             print(f"{player['turn_id'] + 1}. {player['name']}: {player['cards_amount']} cards")
@@ -73,7 +76,6 @@ class TerminalInterface(Client):
         print("Your cards:")
         self.cards = event['info']['my_cards']
         self.cards.sort()
-        print(self.cards)
         src = Card.system_cards_range
         for card in self.cards[:src[0] - src[1]]:
             print(self.card_to_human(card), end=', ')
@@ -87,7 +89,6 @@ class TerminalInterface(Client):
                 pool = self.human_to_card(inp)
                 for card in self.cards:
                     if card in pool:
-                        print(card)
                         self.send(str(card))
                         break
             else:
