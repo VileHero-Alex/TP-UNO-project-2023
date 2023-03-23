@@ -36,8 +36,11 @@ class TerminalInterface(Client):
     def print_update(self, event):
         event = json.loads(event)
         print("------------------------------------------")
-        if not event["ok"]:
+        if "error" in event:
             print(event["error"])
+            return
+        if "announcement" in event:
+            print(event["announcement"])
             return
         if event["status"] == "finished":
             print(f"Player {event['winner']['name']} won!")
@@ -62,7 +65,9 @@ class TerminalInterface(Client):
         print("Your cards:")
         self.cards = event['info']['my_cards']
         self.cards.sort()
-        for card in self.cards[:-6]:
+        print(self.cards)
+        src = Card.system_cards_range
+        for card in self.cards[:src[0] - src[1]]:
             print(self.card_to_human(card), end=', ')
         print()
 
@@ -82,7 +87,7 @@ class TerminalInterface(Client):
     
     def card_to_human(self, card_id) -> str:
         card = Card(card_id)
-        if card.type in Card.type_pool_extra:
+        if card_id >= Card.system_cards_range[0]:
             return card.type
         s = card.color + "_" + card.type
         return s

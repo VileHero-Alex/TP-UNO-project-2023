@@ -7,43 +7,56 @@ import time
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
-
 HEADER = 64
 PORT = 5050
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "beep boop, disconnected"
 SERVER = "192.168.50.17"
 
+class PopCardError(Exception):
+    pass
+
+class IllegalMove(Exception):
+    pass
+
+class InputError(Exception):
+    pass
+class Skip(Exception):
+    pass
 
 class Card:
     color_pool = ["red", "yellow", "green", "blue", "black"]
     type_pool = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "skip", "reverse", "+2", "choose", "+4"]
-    type_pool_extra = ["uno", "draw", "red", "yellow", "green", "blue"]
+    type_pool_extra = ["uno", "draw", "red", "yellow", "green", "blue", "challenge", "accept", "1", "2", "3", "4"]
+    system_cards_range = (108, 120)
 
-    def __init__(self, id):
-        self.id = id
-        color, type = self.card_identificator(id)
+    def __init__(self, card_id: int):
+        try:
+            if card_id >= Card.system_cards_range[1]:
+                raise InputError(f"Card with that ID ({card_id}) doesn't exist")
+        except Exception as e:
+            print(e)
+            raise e
+        self.id = card_id
+        color, type = self.card_identificator(card_id)
         self.color = color
         self.type = type
 
-    def card_identificator(self, id):
-        color = Card.color_pool[id // 25]
+    def card_identificator(self, card_id):
+        color = Card.color_pool[card_id // 25]
         
-        if id % 25 == 0 and id != 100:
+        if card_id % 25 == 0 and card_id != 100:
             type = "0"
-        elif 104 <= id <= 107:
+        elif 104 <= card_id <= 107:
             type = "+4"
-        elif 100 <= id <= 103:
+        elif 100 <= card_id <= 103:
             type = "choose"
-        elif id >= 108:
-            type = Card.type_pool_extra[id - 108]
+        elif card_id >= 108:
+            type = Card.type_pool_extra[card_id - 108]
         else:
-            type = Card.type_pool[(id % 25 + 1) // 2] 
+            type = Card.type_pool[(card_id % 25 + 1) // 2]
 
         return (color, type)
-
-    def system_cards_range():
-        return (108, 114)
 
 
 class Deck:
@@ -103,11 +116,11 @@ class TableDeck(Deck):
 
 class PlayerDeck(Deck):
     def __init__(self):
-        scr = Card.system_cards_range()
+        scr = Card.system_cards_range
         self.cards = [i for i in range(scr[0], scr[1])] # system cards
     
     def __len__(self):
-        scr = Card.system_cards_range()
+        scr = Card.system_cards_range
         rng = scr[1] - scr[0]
         return len(self.cards) - rng
 
@@ -120,13 +133,24 @@ class PlayerDeck(Deck):
         except PopCardError as err:
             print(err, " Try again.")
             return -1
-
-
-class PopCardError(Exception):
-    pass
-
-class IllegalMove(Exception):
-    pass
+    
+    def can_play(self, top_id, top_color, check_for_black=False):
+        top_card = Card(top_id)
+        self.sort()
+        scr = Card.system_cards_range
+        for card_id in self.cards[:scr[0] - scr[1]]:
+            card = Card(card_id)
+            if card.color == "black" and check_for_black:
+                return True
+            if card.color == top_color or card.type == top_card.type:
+                return True
+        return False
+    
+    def has_plus(self, type: str): # '+2' or '+4' should be passed
+        for card_id in self.cards:
+            if Card(card_id).type == type:
+                return True
+        return False
 
 
 class Client:
@@ -197,7 +221,11 @@ class Player(Client):
     def reinit(self):
         self.deck = PlayerDeck()
         self.said_uno = False
-        self.time_since_uno = time.time()
+        self.is_choosing = False
+
+class Bot(Player):
+    def update(self, info):
+        self.status = json.loads(info)
 
 class Server():
     def __init__(self, server, port, deque_lock=None):
@@ -224,12 +252,19 @@ class Server():
         while True:
             conn, addr = self.socket.accept()
             self.clients.append(Player(self.deque_lock, conn=conn))
-            print(f"[NEW CONNECTION] {addr} connected.")
+            print(f"[NEW CONNECTION] {self.clients[-1].name}: {addr} connected.")
             # print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 2}")
 
 
 class Table():
-    def __init__(self, players: list):
+    def __init__(self, players: list, *, seven_zero=False, jump_in=False,
+                 force_play=False, no_bluffing=False, draw_to_match=False):
+        self.seven_zero = seven_zero
+        self.jump_in = jump_in
+        self.force_play = force_play
+        self.no_bluffing = no_bluffing
+        self.draw_to_match = draw_to_match
+
         self.players = players
         self.drawDeck = DrawDeck()
         self.tableDeck = TableDeck()
@@ -269,81 +304,138 @@ class Table():
                 event = self.players[player_id].deque_popleft()
                 while event:
                     try:
-                        card = int(event)
-                    except Exception as e:
-                        print(e)
-                        continue
-                    try:
-                        self.make_move(player_id, card)
+                        self.make_move(player_id, event)
                         if len(self.players[player_id].deck) == 0:
                             self.end_game(player_id)
                         else:
                             self.update_players()
-                    except IllegalMove:
-                        self.update_player(player_id, error="Illegal move")
+                    except Exception as e:
+                        self.update_player(player_id, error=str(e))
+                        print(e)
                     event = self.players[player_id].deque_popleft()
                 
-    def make_move(self, player_id: int, card: int):
-        card = Card(card)
+    def make_move(self, player_id: int, event: str):
+        card = Card(int(event))
         if card.id not in self.players[player_id].deck.cards:
-            print(self.players[player_id].deck.cards, card)
-            raise IllegalMove("Illegal move")
+            raise IllegalMove("You don't have that card in your deck")
+        
+        if card.type == 'uno':
+            if len(self.players[self.previous_turn()].deck) == 1 and not self.players[self.previous_turn()].said_uno:
+                self.draw(self.previous_turn(), 2)
+                self.update_players(announcement=f"{self.previous_turn()} was penalized for not saying UNO")
+                return
+            elif self.turn == player_id and len(self.players[player_id].deck) == 1 and not self.players[self.previous_turn()].said_uno:
+                self.players[player_id].said_uno = True
+                self.update_players(announcement=f"{self.turn()} said UNO")
+                return
+        if card.id < Card.system_cards_range[0] + 2 and self.players[player_id].is_choosing:
+            raise IllegalMove("You need to choose color / accept or challenge / player to swap decks with")
+
         if player_id == self.turn:
-            if card.type in Card.type_pool_extra:
-                if card.type == "uno":
-                    self.players[player_id].said_uno = True
-                    self.players[player_id].time_since_uno = time.time()
-
-                elif card.type == "draw":
+            if int(card.id) >= int(Card.system_cards_range[0]):
+                if card.type == "draw":
+                    if self.force_play and self.players[self.turn].deck.can_play(self.tableDeck.show_last(), self.tableDeck.top_color, check_for_black=True):
+                        raise IllegalMove("Force play is enabled, you can (and should) play a card from your deck")
                     self.draw(player_id, 1)
-                    self.turn = self.next_turn()
-
-                elif card.type in Card.type_pool_extra and self.tableDeck.top_color == "black":
-                    self.tableDeck.top_color = card.type
-                    self.turn = self.next_turn()
-                    if Card(self.tableDeck.show_last()).type == "+4":
+                    if not self.draw_to_match:
                         self.turn = self.next_turn()
 
+                elif card.type in Card.color_pool[:-1] and self.tableDeck.top_color == "black":
+                    self.players[player_id].is_choosing = False
+                    self.tableDeck.top_color = card.type
+                    self.turn = self.next_turn()
+                    if Card(self.tableDeck.show_last()).type == "+4" and not self.no_bluffing:
+                        self.turn = self.next_turn()
+                        self.players[self.turn].is_choosing = True
+                    
+                elif card.type == "challenge" or card.type == "accept":
+                    if self.no_bluffing:
+                        raise IllegalMove("No bluffing mode is enabled")
+                    if Card(self.tableDeck.show_last()).type != '+4':
+                        raise IllegalMove("You can't use that now")
+                    self.players[player_id].is_choosing = False
+                    if card.type == "challenge":
+                        self.update_players(announcement=f"{player_id} challenges {self.previous_turn}")
+                        self.update_player(player_id, show_cards=self.previous_turn())
+                        if self.players[self.previous_turn()].deck.can_play(self.tableDeck.show_last(), self.tableDeck.top_color):
+                            self.update_players(announcement=f"Challenge succesful")
+                            self.draw(self.previous_turn(), 4)
+                        else:
+                            self.update_players(announcement=f"Challenge failed")
+                            self.draw(self.turn, 6)
+                            self.turn = self.next_turn()
+                    else:
+                        self.draw(self.turn, 4)
+                        self.turn = self.next_turn()
+                elif card.type in ["1", "2", "3", "4"] and Card(self.tableDeck.show_last()).type == '7':
+                    if not self.seven_zero:
+                        raise IllegalMove("7-0 mode is not enabled")
+                    if player_id == int(card.type) - 1:
+                        raise IllegalMove("You can't swap cards with yourself")
+                    self.seven(player_id, int(card.type) - 1)
+                    self.players[player_id].is_choosing = False
+                    self.turn = self.next_turn()
+                else:
+                    raise IllegalMove("Illegal move")
+
             elif card.type == "+4":
-                self.draw(self.next_turn(), 4)
+                if self.no_bluffing:
+                    self.draw(self.next_turn(), 4)
                 self.lay_card(player_id, card)
+                self.players[player_id].is_choosing = True
                 
             elif card.type == "choose":
                 self.lay_card(player_id, card)
+                self.players[player_id].is_choosing = True
 
             elif card.color == self.tableDeck.top_color or Card(self.tableDeck.show_last()).type == card.type:
                 self.lay_card(player_id, card)
                 if card.type == "skip":
                     self.turn = self.next_turn()
-
                 elif card.type == "reverse":
                     self.change_direction()
-
                 elif card.type == "+2":
-                    self.draw(self.next_turn(), 2)
                     self.turn = self.next_turn()
-
-                self.turn = self.next_turn()
-
+                    self.draw(self.turn, 2)
+                elif card.type == "0" and self.seven_zero:
+                    self.zero()
+                if card.type == "7" and self.seven_zero:
+                    self.players[player_id].is_choosing = True
+                else:
+                    self.turn = self.next_turn()
             else:
-                raise IllegalMove("IllegalMove")
+                raise IllegalMove("Illegal move")
+        
         else:
             if card.color == self.tableDeck.top_color and Card(self.tableDeck.show_last()).type == card.type and card.type in Card.type_pool[:-2]:
+                if not self.jump_in:
+                    raise IllegalMove("Jump-in mode is not enabled")
+                if any([player.is_choosing for player in self.players]):
+                    raise IllegalMove("You have to wait until the person will choose color / challenge or accept / player to swap cards with")
+                
                 self.lay_card(player_id, card)
-                self.turn = player_id
-                self.turn = self.next_turn()
-            elif card.type == "uno":
-                if len(self.players[self.previous_turn()].deck) == 1 \
-                        and not self.players[self.previous_turn()].said_uno:
-                    self.draw(self.previous_turn(), 2)
-                    self.players[self.previous_turn()].said_uno = True
-                elif time.time() - self.players[self.previous_turn()].time_since_uno < 5:
-                    pass
+                if card.type == "skip":
+                    self.turn = self.next_turn()
+                elif card.type == "reverse":
+                    self.change_direction()
+                elif card.type == "+2":
+                    self.turn = self.next_turn()
+                    self.draw(self.turn, 2)
+                elif card.type == "0" and self.seven_zero:
+                    self.zero()
+                if card.type == "7" and self.seven_zero:
+                    self.players[player_id].is_choosing = True
                 else:
-                    self.draw(player_id, 2)
+                    self.turn = self.next_turn()
             else:
-                raise IllegalMove("IllegalMove")
-            
+                raise IllegalMove("Illegal move")
+
+    def zero(self):
+        for i in range(len(self.players) - 1):
+            self.players[i].deck, self.players[i + 1].deck = self.players[i + 1].deck, self.players[i].deck
+    
+    def seven(self, player_one, player_two):
+        self.players[player_one].deck, self.players[player_two].deck = self.players[player_two].deck, self.players[player_one].deck
     
     def lay_card(self, player_id, card):
         self.players[player_id].deck.throw_card(card.id)
@@ -371,8 +463,7 @@ class Table():
             next_player = (self.turn + len(self.players) - 1) % len(self.players)
         return next_player
 
-    
-    def update_player(self, receiver_player_id, *, winner_id=None, error=None):
+    def update_player(self, receiver_player_id, *, winner_id=None, error=None, show_cards=None, announcement=None):
         players_info = []
         for player_id in range(len(self.players)):
             player = self.players[player_id]
@@ -383,35 +474,37 @@ class Table():
                 "cards_amount": len(player.deck)
             }
             players_info.append(info)
-
-        my_dict = {
-            "top_card_id": self.tableDeck.show_last(),
-            "top_card_color": self.tableDeck.top_color,
-            "players": players_info,
-            "turn": "you" if receiver_player_id == self.turn else self.turn,
-            "is_direction_clockwise": self.is_direction_clockwise,
-            "my_cards": self.players[receiver_player_id].deck.cards,
-        }
+        
         if winner_id:
-            my_dict_final = {
-                "ok": True,
+            message = {
                 "status": "finished",
                 "winner": players_info[winner_id],
             }
         elif error:
-            my_dict_final = {
-                "ok": False,
+            message = {
+                "status": "running",
                 "error": str(error)
             }
-        else:
-            my_dict_final = {
-                "ok": True,
+        elif announcement:
+            message = {
                 "status": "running",
-                "info": my_dict
+                "announcement": announcement,
             }
-        # pp.pprint(my_dict_final)
-        self.players[receiver_player_id].send(json.dumps(my_dict_final))
+        else:
+            message = {
+                "status": "running",
+                "info": {
+                    "top_card_id": self.tableDeck.show_last(),
+                    "top_card_color": self.tableDeck.top_color,
+                    "players": players_info,
+                    "turn": "you" if receiver_player_id == self.turn else self.turn,
+                    "is_direction_clockwise": self.is_direction_clockwise,
+                    "my_cards": self.players[receiver_player_id].deck.cards,
+                }
+            }
+        # pp.pprint(message)
+        self.players[receiver_player_id].send(json.dumps(message))
     
-    def update_players(self, winner_id=None):
+    def update_players(self, winner_id=None, announcement=None):
         for player_id in range(len(self.players)):
-            self.update_player(player_id, winner_id=winner_id)
+            self.update_player(player_id, winner_id=winner_id, announcement=announcement)

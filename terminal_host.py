@@ -39,6 +39,9 @@ class TerminalInterface(Client):
         if "error" in event:
             print(event["error"])
             return
+        if "announcement" in event:
+            print(event["announcement"])
+            return
         if event["status"] == "finished":
             print(f"Player {event['winner']['name']} won!")
             return
@@ -62,6 +65,7 @@ class TerminalInterface(Client):
         print("Your cards:")
         self.cards = event['info']['my_cards']
         self.cards.sort()
+        print(self.cards)
         src = Card.system_cards_range
         for card in self.cards[:src[0] - src[1]]:
             print(self.card_to_human(card), end=', ')
@@ -83,7 +87,7 @@ class TerminalInterface(Client):
     
     def card_to_human(self, card_id) -> str:
         card = Card(card_id)
-        if card.type in Card.type_pool_extra:
+        if card_id >= Card.system_cards_range[0]:
             return card.type
         s = card.color + "_" + card.type
         return s
@@ -124,7 +128,7 @@ def host(name):
     while inp != "start":
         inp = input()
     player.thread_listen.start()
-    table = Table(server.clients.copy())
+    table = Table(server.clients.copy(), seven_zero=True, jump_in=True, no_bluffing=True, draw_to_match=True)
 
 def join(name):
     lock = threading.Lock()

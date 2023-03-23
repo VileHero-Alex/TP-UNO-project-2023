@@ -1,7 +1,7 @@
 from deck import DrawDeck, TableDeck
 from player import Player
 from card import Card
-from errors import IllegalMove, CardError, InputError, Announcement, Skip
+from errors import IllegalMove, InputError, Skip
 import json
 import random
 import time
@@ -74,15 +74,18 @@ class Table():
             if len(self.players[self.previous_turn()].deck) == 1 and not self.players[self.previous_turn()].said_uno:
                 self.draw(self.previous_turn(), 2)
                 self.update_players(announcement=f"{self.previous_turn()} was penalized for not saying UNO")
+                return
             elif self.turn == player_id and len(self.players[player_id].deck) == 1 and not self.players[self.previous_turn()].said_uno:
                 self.players[player_id].said_uno = True
                 self.update_players(announcement=f"{self.turn()} said UNO")
-                raise Skip()
+                return
+        if card.id < Card.system_cards_range[0] + 2 and self.players[player_id].is_choosing:
+            raise IllegalMove("You need to choose color / accept or challenge / player to swap decks with")
 
         if player_id == self.turn:
-            if card.type == "black" and card.type in Card.type_pool_extra:
+            if card.id >= Card.system_cards_range[0]:
                 if card.type == "draw":
-                    if self.force_play and self.players[self.turn].deck.can_play(self.tableDeck.show_last(), self.tableDeck.top_color):
+                    if self.force_play and self.players[self.turn].deck.can_play(self.tableDeck.show_last(), self.tableDeck.top_color, check_for_black=True):
                         raise IllegalMove("Force play is enabled, you can (and should) play a card from your deck")
                     self.draw(player_id, 1)
                     if not self.draw_to_match:
@@ -92,7 +95,7 @@ class Table():
                     self.players[player_id].is_choosing = False
                     self.tableDeck.top_color = card.type
                     self.turn = self.next_turn()
-                    if Card(self.tableDeck.show_last()).type == "+4" and self.no_bluffing:
+                    if Card(self.tableDeck.show_last()).type == "+4" and not self.no_bluffing:
                         self.turn = self.next_turn()
                         self.players[self.turn].is_choosing = True
                     
@@ -115,10 +118,16 @@ class Table():
                     else:
                         self.draw(self.turn, 4)
                         self.turn = self.next_turn()
-                elif card.type in ["1", "2", "3", "4"] and Card(self.tableDeck.show_last).type == '7':
+                elif card.type in ["1", "2", "3", "4"] and Card(self.tableDeck.show_last()).type == '7':
+                    if not self.seven_zero:
+                        raise IllegalMove("7-0 mode is not enabled")
+                    if player_id == int(card.type) - 1:
+                        raise IllegalMove("You can't swap cards with yourself")
                     self.seven(player_id, int(card.type) - 1)
                     self.players[player_id].is_choosing = False
                     self.turn = self.next_turn()
+                else:
+                    raise IllegalMove("Illegal move")
 
             elif card.type == "+4":
                 if self.no_bluffing:
@@ -139,32 +148,38 @@ class Table():
                 elif card.type == "+2":
                     self.turn = self.next_turn()
                     self.draw(self.turn, 2)
-                elif card.type == "0":
+                elif card.type == "0" and self.seven_zero:
                     self.zero()
-
-                if card.type != "7":
-                    self.turn = self.next_turn()
-                else:
+                if card.type == "7" and self.seven_zero:
                     self.players[player_id].is_choosing = True
+                else:
+                    self.turn = self.next_turn()
             else:
-                raise IllegalMove("IllegalMove")
+                raise IllegalMove("Illegal move")
         
         else:
             if card.color == self.tableDeck.top_color and Card(self.tableDeck.show_last()).type == card.type and card.type in Card.type_pool[:-2]:
+                if not self.jump_in:
+                    raise IllegalMove("Jump-in mode is not enabled")
+                if any([player.is_choosing for player in self.players]):
+                    raise IllegalMove("You have to wait until the person will choose color / challenge or accept / player to swap cards with")
+                
                 self.lay_card(player_id, card)
-                self.turn = player_id
-                self.turn = self.next_turn()
-            elif card.type == "uno":
-                if len(self.players[self.previous_turn()].deck) == 1 \
-                        and not self.players[self.previous_turn()].said_uno:
-                    self.draw(self.previous_turn(), 2)
-                    self.players[self.previous_turn()].said_uno = True
-                elif time.time() - self.players[self.previous_turn()].time_since_uno < 5:
-                    pass
+                if card.type == "skip":
+                    self.turn = self.next_turn()
+                elif card.type == "reverse":
+                    self.change_direction()
+                elif card.type == "+2":
+                    self.turn = self.next_turn()
+                    self.draw(self.turn, 2)
+                elif card.type == "0" and self.seven_zero:
+                    self.zero()
+                if card.type == "7" and self.seven_zero:
+                    self.players[player_id].is_choosing = True
                 else:
-                    self.draw(player_id, 2)
+                    self.turn = self.next_turn()
             else:
-                raise IllegalMove("IllegalMove")
+                raise IllegalMove("Illegal move")
 
     def zero(self):
         for i in range(len(self.players) - 1):

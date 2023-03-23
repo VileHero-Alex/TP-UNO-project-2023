@@ -6,12 +6,5 @@ class IllegalMove(Exception):
 
 class InputError(Exception):
     pass
-
-class CardError(Exception):
-    pass
-
-class Announcement(Exception):
-    pass
-
 class Skip(Exception):
     pass

@@ -4,11 +4,11 @@ class Card:
     type_pool_extra = ["uno", "draw", "red", "yellow", "green", "blue", "challenge", "accept", "1", "2", "3", "4"]
     system_cards_range = (108, 120)
 
-    def __init__(self, id: int):
-        if id >= Card.system_cards_range[1]:
-            raise CardError(f"Card with that ID ({id}) doesn't exist")
-        self.id = id
-        color, type = self.card_identificator(id)
+    def __init__(self, card_id: int):
+        if card_id >= Card.system_cards_range[1]:
+            raise InputError(f"Card with that ID ({card_id}) doesn't exist")
+        self.id = card_id
+        color, type = self.card_identificator(card_id)
         self.color = color
         self.type = type
 

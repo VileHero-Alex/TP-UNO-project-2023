@@ -89,7 +89,7 @@ class Server():
         while True:
             conn, addr = self.socket.accept()
             self.clients.append(Player(self.deque_lock, conn=conn))
-            print(f"[NEW CONNECTION] {addr} connected.")
+            print(f"[NEW CONNECTION] {self.clients[-1].name}: {addr} connected.")
             # print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 2}")
 
 

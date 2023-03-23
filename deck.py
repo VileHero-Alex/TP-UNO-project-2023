@@ -78,12 +78,14 @@ class PlayerDeck(Deck):
             print(err, " Try again.")
             return -1
     
-    def can_play(self, top_id, top_color):
+    def can_play(self, top_id, top_color, check_for_black=False):
         top_card = Card(top_id)
-        for card_id in self.cards:
+        self.sort()
+        scr = Card.system_cards_range
+        for card_id in self.cards[:scr[0] - scr[1]]:
             card = Card(card_id)
-            if card.type == "+4":
-                continue
+            if card.color == "black" and check_for_black:
+                return True
             if card.color == top_color or card.type == top_card.type:
                 return True
         return False
