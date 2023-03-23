@@ -72,12 +72,16 @@ class Table():
         
         if card.type == 'uno':
             if len(self.players[self.previous_turn()].deck) == 1 and not self.players[self.previous_turn()].said_uno:
+                if player_id == self.previous_turn():
+                    self.players[player_id].said_uno = True
+                    self.update_players(announcement=f"Player {self.turn + 1} said UNO")
+                    return
                 self.draw(self.previous_turn(), 2)
                 self.update_players(announcement=f"{self.previous_turn()} was penalized for not saying UNO")
                 return
             elif self.turn == player_id and len(self.players[player_id].deck) == 1 and not self.players[self.previous_turn()].said_uno:
                 self.players[player_id].said_uno = True
-                self.update_players(announcement=f"{self.turn()} said UNO")
+                self.update_players(announcement=f"Player {self.turn + 1} said UNO")
                 return
         if card.id < Card.system_cards_range[0] + 2 and self.players[player_id].is_choosing:
             raise IllegalMove("You need to choose color / accept or challenge / player to swap decks with")
@@ -127,6 +131,8 @@ class Table():
                         raise IllegalMove("7-0 mode is not enabled")
                     if player_id == int(card.type) - 1:
                         raise IllegalMove("You can't swap cards with yourself")
+                    if int(card.type) > len(self.players):
+                        raise IllegalMove(f"Player {card.type} doesn't exist")
                     self.seven(player_id, int(card.type) - 1)
                     self.players[player_id].is_choosing = False
                     self.turn = self.next_turn()
@@ -168,6 +174,7 @@ class Table():
                 if any([player.is_choosing for player in self.players]):
                     raise IllegalMove("You have to wait until the person will choose color / challenge or accept / player to swap cards with")
                 
+                self.turn = player_id
                 self.lay_card(player_id, card)
                 if card.type == "skip":
                     self.turn = self.next_turn()
