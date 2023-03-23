@@ -42,10 +42,18 @@ class TerminalInterface(Client):
         if "announcement" in event:
             print(event["announcement"])
             return
+        if "player_info" in event:
+            print(f"{event['player_info']['name']}'s cards:")
+            cards = event['player_info']['cards']
+            cards.sort()
+            for card in cards:
+                print(self.card_to_human(card), end=', ')
+            print()
+            return
+
         if event["status"] == "finished":
             print(f"Player {event['winner']['name']} won!")
             return
-        
         for player in event["info"]["players"]:
             print(f"{player['turn_id'] + 1}. {player['name']}: {player['cards_amount']} cards")
         card_id = event['info']['top_card_id']

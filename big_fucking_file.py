@@ -96,20 +96,29 @@ class TableDeck(Deck):
     def __init__(self):
         super().__init__()
         self.top_color = None
+        self.last_top_color = None
 
     def show_last(self) -> int:
         if self.is_empty():
             return None
         return self.cards[-1]
+
+    def show_before_last(self) -> int:
+        if len(self) < 2:
+            return None
+        return self.cards[-2]
     
     def clear(self) -> None:
         last_card_id = self.cards[-1]
         self.cards.pop()
+        last_after_last_card_id = self.cards[-1]
+        self.cards.pop()
         removed_cards = self.cards.copy()
-        self.cards = [last_card_id]
+        self.cards = [last_after_last_card_id, last_card_id]
         return removed_cards
     
     def receive_card(self, receive_card_id: int) -> None:
+        self.last_top_color = self.top_color
         self.top_color = Card(receive_card_id).color
         self.cards.append(receive_card_id)
 
@@ -311,7 +320,6 @@ class Table():
                             self.update_players()
                     except Exception as e:
                         self.update_player(player_id, error=str(e))
-                        print(e)
                     event = self.players[player_id].deque_popleft()
                 
     def make_move(self, player_id: int, event: str):
@@ -332,7 +340,7 @@ class Table():
             raise IllegalMove("You need to choose color / accept or challenge / player to swap decks with")
 
         if player_id == self.turn:
-            if int(card.id) >= int(Card.system_cards_range[0]):
+            if card.id >= Card.system_cards_range[0]:
                 if card.type == "draw":
                     if self.force_play and self.players[self.turn].deck.can_play(self.tableDeck.show_last(), self.tableDeck.top_color, check_for_black=True):
                         raise IllegalMove("Force play is enabled, you can (and should) play a card from your deck")
@@ -344,9 +352,13 @@ class Table():
                     self.players[player_id].is_choosing = False
                     self.tableDeck.top_color = card.type
                     self.turn = self.next_turn()
-                    if Card(self.tableDeck.show_last()).type == "+4" and not self.no_bluffing:
-                        self.turn = self.next_turn()
-                        self.players[self.turn].is_choosing = True
+                    if Card(self.tableDeck.show_last()).type == "+4":
+                        if self.no_bluffing:
+                            self.draw(self.turn, 4)
+                            self.turn = self.next_turn()
+                        else:
+                            self.players[self.turn].is_choosing = True
+
                     
                 elif card.type == "challenge" or card.type == "accept":
                     if self.no_bluffing:
@@ -357,7 +369,7 @@ class Table():
                     if card.type == "challenge":
                         self.update_players(announcement=f"{player_id} challenges {self.previous_turn}")
                         self.update_player(player_id, show_cards=self.previous_turn())
-                        if self.players[self.previous_turn()].deck.can_play(self.tableDeck.show_last(), self.tableDeck.top_color):
+                        if self.players[self.previous_turn()].deck.can_play(self.tableDeck.show_before_last(), self.tableDeck.last_top_color):
                             self.update_players(announcement=f"Challenge succesful")
                             self.draw(self.previous_turn(), 4)
                         else:
@@ -489,6 +501,17 @@ class Table():
             message = {
                 "status": "running",
                 "announcement": announcement,
+            }
+        elif show_cards:
+            player = self.players[show_cards]
+            message = {
+                "status": "running",
+                "player_info": {
+                    "turn_id": show_cards,
+                    "id": player.id,
+                    "name": player.name,
+                    "cards": player.deck.cards
+                }
             }
         else:
             message = {

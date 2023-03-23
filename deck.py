@@ -40,20 +40,29 @@ class TableDeck(Deck):
     def __init__(self):
         super().__init__()
         self.top_color = None
+        self.last_top_color = None
 
     def show_last(self) -> int:
         if self.is_empty():
             return None
         return self.cards[-1]
+
+    def show_before_last(self) -> int:
+        if len(self) < 2:
+            return None
+        return self.cards[-2]
     
     def clear(self) -> None:
         last_card_id = self.cards[-1]
         self.cards.pop()
+        last_after_last_card_id = self.cards[-1]
+        self.cards.pop()
         removed_cards = self.cards.copy()
-        self.cards = [last_card_id]
+        self.cards = [last_after_last_card_id, last_card_id]
         return removed_cards
     
     def receive_card(self, receive_card_id: int) -> None:
+        self.last_top_color = self.top_color
         self.top_color = Card(receive_card_id).color
         self.cards.append(receive_card_id)
 

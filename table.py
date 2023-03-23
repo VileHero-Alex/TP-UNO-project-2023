@@ -95,9 +95,13 @@ class Table():
                     self.players[player_id].is_choosing = False
                     self.tableDeck.top_color = card.type
                     self.turn = self.next_turn()
-                    if Card(self.tableDeck.show_last()).type == "+4" and not self.no_bluffing:
-                        self.turn = self.next_turn()
-                        self.players[self.turn].is_choosing = True
+                    if Card(self.tableDeck.show_last()).type == "+4":
+                        if self.no_bluffing:
+                            self.draw(self.turn, 4)
+                            self.turn = self.next_turn()
+                        else:
+                            self.players[self.turn].is_choosing = True
+
                     
                 elif card.type == "challenge" or card.type == "accept":
                     if self.no_bluffing:
@@ -108,7 +112,7 @@ class Table():
                     if card.type == "challenge":
                         self.update_players(announcement=f"{player_id} challenges {self.previous_turn}")
                         self.update_player(player_id, show_cards=self.previous_turn())
-                        if self.players[self.previous_turn()].deck.can_play(self.tableDeck.show_last(), self.tableDeck.top_color):
+                        if self.players[self.previous_turn()].deck.can_play(self.tableDeck.show_before_last(), self.tableDeck.last_top_color):
                             self.update_players(announcement=f"Challenge succesful")
                             self.draw(self.previous_turn(), 4)
                         else:
@@ -240,6 +244,17 @@ class Table():
             message = {
                 "status": "running",
                 "announcement": announcement,
+            }
+        elif show_cards:
+            player = self.players[show_cards]
+            message = {
+                "status": "running",
+                "player_info": {
+                    "turn_id": show_cards,
+                    "id": player.id,
+                    "name": player.name,
+                    "cards": player.deck.cards
+                }
             }
         else:
             message = {
