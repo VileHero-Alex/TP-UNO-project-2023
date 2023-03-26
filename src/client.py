@@ -23,6 +23,7 @@ class Client:
             self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.conn.connect((server, port))
             self.send(name)
+            self.name = name
             print("[CLIENT STARTUP] client is connected to {}:{}".format(server, port))
         self.thread = threading.Thread(target=self.wait_for_messages)
         self.thread.start()

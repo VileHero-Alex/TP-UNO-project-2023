@@ -28,7 +28,6 @@ class Table():
         self.tableDeck = TableDeck()
         while Card(self.drawDeck.cards[0]).color == 'black':
             self.drawDeck = DrawDeck()
-            print("Ooops)")
         self.tableDeck.receive_card(self.drawDeck.pop_top())
         self.turn = random.randint(0, len(players) - 1)
         self.is_direction_clockwise = True
