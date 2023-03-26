@@ -34,7 +34,7 @@ if __name__ == "__main__":
         except OSError:
             print(f"[CONNECTION ERROR] can't start server on {SERVER}:{PORT}")
             exit()
-        player = Bot(threading.Lock(), server=SERVER, port=PORT, name=NICKNAME)
+        player = TerminalInterface(threading.Lock(), server=SERVER, port=PORT, name=NICKNAME)
         print("Waiting for other connections. Type 'start' when all your friends are connected")
         start = input()
         while start != "start":
@@ -50,4 +50,4 @@ if __name__ == "__main__":
         players = server.clients.copy()
         random.shuffle(players)
         Table(players)
-        # player.thread_listen.start()
+        player.thread_listen.start()
