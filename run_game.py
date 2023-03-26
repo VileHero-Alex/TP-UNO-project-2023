@@ -51,3 +51,6 @@ if __name__ == "__main__":
         random.shuffle(players)
         Table(players)
         player.thread_listen.start()
+    elif HOST_OR_JOIN == "JOIN":
+        player = TerminalInterface(threading.Lock(), server=SERVER, port=PORT, name=NICKNAME)
+        player.thread_listen.start()
