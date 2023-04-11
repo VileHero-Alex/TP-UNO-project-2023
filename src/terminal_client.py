@@ -22,7 +22,7 @@ class TerminalInterface(Client):
         self.cards = []
         # self.thread_listen.start()
         self.thread_update.start()
-    
+
     def listen_for_updates(self):
         while self.running:
             event = self.deque_popleft()
@@ -56,7 +56,8 @@ class TerminalInterface(Client):
             self.running = False
             return
         for player in event["info"]["players"]:
-            print(f"{player['turn_id'] + 1}. {player['name']}: {player['cards_amount']} cards")
+            print(
+                f"{player['turn_id'] + 1}. {player['name']}: {player['cards_amount']} cards")
         card_id = event['info']['top_card_id']
         color = event['info']['top_card_color']
         print(f"Last played card: {color}_{Card(card_id).type}")
@@ -65,7 +66,8 @@ class TerminalInterface(Client):
         if turn == "you":
             print("It's your turn.", end=" ")
         else:
-            print(f"It's {event['info']['players'][turn]['name']}\'s turn. ", end='')
+            print(
+                f"It's {event['info']['players'][turn]['name']}\'s turn. ", end='')
         if event['info']['is_direction_clockwise']:
             print("The direction is clockwise")
         else:
@@ -79,8 +81,8 @@ class TerminalInterface(Client):
             print(self.card_to_human(card), end=', ')
         print(self.card_to_human(self.cards[scr[0] - scr[1] - 1]), end='.\n')
         if event['info']['choosing']:
-            print("You need to choose color / accept or challenge / player to swap decks with")
-
+            print(
+                "You need to choose color / accept or challenge / player to swap decks with")
 
     def listen_for_input(self):
         while True:
@@ -93,15 +95,14 @@ class TerminalInterface(Client):
                         break
             else:
                 print("That's not the correct play")
-    
+
     def card_to_human(self, card_id) -> str:
         card = Card(card_id)
         if card_id >= Card.system_cards_range[0]:
             return card.type
         s = card.color + "_" + card.type
         return s
-        
-    
+
     def human_to_card(self, inp) -> list:
         if inp in Card.type_pool_extra:
             return [Card.type_pool_extra.index(inp) + 108]
@@ -119,7 +120,7 @@ class TerminalInterface(Client):
             return [id]
         id += Card.type_pool.index(type) * 2
         return [id - 1, id]
-    
+
     def correct_play(self, inp):
         pool = self.human_to_card(inp)
         if not pool:

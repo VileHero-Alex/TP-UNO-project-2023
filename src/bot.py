@@ -12,14 +12,17 @@ config = configparser.ConfigParser()
 config.read(config_file_path)
 DISCONNECT_MESSAGE = config.get('SYSTEM CONFIG', 'DISCONNECT_MESSAGE')
 
+
 class Bot(Client):
-    BOT_NAMES = ['Max', 'Ace', 'Jazz', 'Arrow', 'Bolt', 'Domino', 'Ninja', 'Flip', 'Spark', 'Byte', 'Whirl', 'Botz', 'Chico', 'Darling', 'Gigabyte', 'Matrix', 'Nexus', 'Oracle', 'Quiver', 'Ranger', 'Phoenix', 'Speedy', 'Tangle', 'Upgrade', 'Vector', 'Wizard', 'Phantom', 'Zoom', 'Astro', 'Skillz', 'Luna']
+    BOT_NAMES = ['Max', 'Ace', 'Jazz', 'Arrow', 'Bolt', 'Domino', 'Ninja', 'Flip', 'Spark', 'Byte', 'Whirl', 'Botz', 'Chico', 'Darling', 'Gigabyte', 'Matrix',
+                 'Nexus', 'Oracle', 'Quiver', 'Ranger', 'Phoenix', 'Speedy', 'Tangle', 'Upgrade', 'Vector', 'Wizard', 'Phantom', 'Zoom', 'Astro', 'Skillz', 'Luna']
+
     def __init__(self, deque_lock: threading.Lock, *, conn=None, server=None, port=None, name=''):
         super().__init__(deque_lock, conn=conn, server=server, port=port, name=name)
         self.thread_update = threading.Thread(target=self.listen_for_updates)
         self.running = True
         self.thread_update.start()
-    
+
     def listen_for_updates(self):
         while self.running:
             event = self.deque_popleft()
@@ -46,7 +49,7 @@ class Bot(Client):
         if turn != "you":
             self.process_send("uno", 1, 2)
             return
-        
+
         if choosing:
             if top_card.type == "+4" and top_card.color != "black":
                 action = random.choice(["accept", "challenge"])
@@ -72,8 +75,6 @@ class Bot(Client):
                 return
         self.process_send("draw", 0.5, 1.5)
 
-                    
-
     def process_send(self, action, a=1, b=5):
         wait = 0
         mean = (a + b) / 2
@@ -86,7 +87,7 @@ class Bot(Client):
             if card in pool:
                 self.send(str(card))
                 break
-    
+
     def human_to_card(self, inp) -> list:
         if inp in Card.type_pool_extra:
             return [Card.type_pool_extra.index(inp) + 108]

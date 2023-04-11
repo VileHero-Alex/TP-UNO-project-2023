@@ -8,7 +8,7 @@ class Player(Client):
         super().__init__(deque_lock, conn=conn, server=server, port=port, name=name)
         self.id = hash(name)
         self.reinit()
-    
+
     def reinit(self):
         self.deck = PlayerDeck()
         self.said_uno = False

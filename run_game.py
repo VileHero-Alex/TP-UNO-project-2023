@@ -19,7 +19,8 @@ SERVER = config.get('CONNECTION SETTINGS', 'SERVER')
 PORT = config.getint('CONNECTION SETTINGS', 'PORT')
 NICKNAME = config.get('GAME LAUNCH PARAMETERS', 'NICKNAME')
 HOST_OR_JOIN = config.get('GAME LAUNCH PARAMETERS', 'HOST_OR_JOIN')
-INITIAL_NUMBER_OF_CARDS = config.getint('GAME RULES', 'INITIAL_NUMBER_OF_CARDS')
+INITIAL_NUMBER_OF_CARDS = config.getint(
+    'GAME RULES', 'INITIAL_NUMBER_OF_CARDS')
 SEVEN_ZERO = config.getboolean('GAME RULES', 'SEVEN_ZERO')
 JUMP_IN = config.getboolean('GAME RULES', 'JUMP_IN')
 FORCE_PLAY = config.getboolean('GAME RULES', 'FORCE_PLAY')
@@ -34,7 +35,8 @@ if __name__ == "__main__":
         except OSError:
             print(f"[CONNECTION ERROR] can't start server on {SERVER}:{PORT}")
             exit()
-        player = TerminalInterface(threading.Lock(), server=SERVER, port=PORT, name=NICKNAME)
+        player = TerminalInterface(
+            threading.Lock(), server=SERVER, port=PORT, name=NICKNAME)
         print("Waiting for other connections. Type 'start' when all your friends are connected")
         start = input()
         while start != "start":
@@ -45,12 +47,14 @@ if __name__ == "__main__":
         random.shuffle(Bot.BOT_NAMES)
         bots = []
         for i in range(4 - len(server.clients)):
-            bots.append(Bot(threading.Lock(), server=SERVER, port=PORT, name=f"AI {Bot.BOT_NAMES[i]}"))
+            bots.append(Bot(threading.Lock(), server=SERVER,
+                        port=PORT, name=f"AI {Bot.BOT_NAMES[i]}"))
         time.sleep(1)
         players = server.clients.copy()
         random.shuffle(players)
         Table(players)
         player.thread_listen.start()
     elif HOST_OR_JOIN == "JOIN":
-        player = TerminalInterface(threading.Lock(), server=SERVER, port=PORT, name=NICKNAME)
+        player = TerminalInterface(
+            threading.Lock(), server=SERVER, port=PORT, name=NICKNAME)
         player.thread_listen.start()

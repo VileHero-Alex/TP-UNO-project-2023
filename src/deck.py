@@ -9,13 +9,14 @@ class Deck:
 
     def __len__(self):
         return len(self.cards)
-    
+
     def pop_card(self, pop_card_id) -> int:
         try:
             self.cards.remove(pop_card_id)
             return pop_card_id
         except:
-            raise PopCardError("illegal move: there is no card that you are looking for!")
+            raise PopCardError(
+                "illegal move: there is no card that you are looking for!")
 
     def receive_card(self, receive_card_id) -> None:
         self.cards.append(receive_card_id)
@@ -31,10 +32,11 @@ class DrawDeck(Deck):
 
     def shuffle(self) -> None:
         random.shuffle(self.cards)
-    
+
     def pop_top(self) -> int:
         received_card_id = self.pop_card(self.cards[0])
         return received_card_id
+
 
 class TableDeck(Deck):
     def __init__(self):
@@ -51,7 +53,7 @@ class TableDeck(Deck):
         if len(self) < 2:
             return None
         return self.cards[-2]
-    
+
     def clear(self) -> None:
         last_card_id = self.cards[-1]
         self.cards.pop()
@@ -60,7 +62,7 @@ class TableDeck(Deck):
         removed_cards = self.cards.copy()
         self.cards = [last_after_last_card_id, last_card_id]
         return removed_cards
-    
+
     def receive_card(self, receive_card_id: int) -> None:
         self.last_top_color = self.top_color
         self.top_color = Card(receive_card_id).color
@@ -70,8 +72,8 @@ class TableDeck(Deck):
 class PlayerDeck(Deck):
     def __init__(self):
         scr = Card.system_cards_range
-        self.cards = [i for i in range(scr[0], scr[1])] # system cards
-    
+        self.cards = [i for i in range(scr[0], scr[1])]  # system cards
+
     def __len__(self):
         scr = Card.system_cards_range
         rng = scr[1] - scr[0]
@@ -86,7 +88,7 @@ class PlayerDeck(Deck):
         except PopCardError as err:
             print(err, " Try again.")
             return -1
-    
+
     def can_play(self, top_id, top_color, check_for_black=False):
         top_card = Card(top_id)
         self.sort()
