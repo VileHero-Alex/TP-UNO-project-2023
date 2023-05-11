@@ -14,8 +14,10 @@ DISCONNECT_MESSAGE = config.get('SYSTEM CONFIG', 'DISCONNECT_MESSAGE')
 
 
 class TerminalInterface(Client):
-    def __init__(self, deque_lock: threading.Lock, *, conn=None, server=None, port=None, name=''):
-        super().__init__(deque_lock, conn=conn, server=server, port=port, name=name)
+    def __init__(self, deque_lock: threading.Lock, *,
+                 conn=None, server=None, port=None, name=''):
+        super().__init__(deque_lock,
+                         conn=conn, server=server, port=port, name=name)
         self.thread_listen = threading.Thread(target=self.listen_for_input)
         self.thread_update = threading.Thread(target=self.listen_for_updates)
         self.running = True
@@ -57,7 +59,9 @@ class TerminalInterface(Client):
             return
         for player in event["info"]["players"]:
             print(
-                f"{player['turn_id'] + 1}. {player['name']}: {player['cards_amount']} cards")
+                f"{player['turn_id'] + 1}. {player['name']}: \
+                    {player['cards_amount']} cards"
+            )
         card_id = event['info']['top_card_id']
         color = event['info']['top_card_color']
         print(f"Last played card: {color}_{Card(card_id).type}")
@@ -67,12 +71,13 @@ class TerminalInterface(Client):
             print("It's your turn.", end=" ")
         else:
             print(
-                f"It's {event['info']['players'][turn]['name']}\'s turn. ", end='')
+                f"It's {event['info']['players'][turn]['name']}\'s turn.",
+                end=''
+            )
         if event['info']['is_direction_clockwise']:
-            print("The direction is clockwise")
+            print("The direction is clockwise", end="\n\n")
         else:
-            print("The direction is COUNTERclockwise")
-        print()
+            print("The direction is COUNTERclockwise", end="\n\n")
         print("Your cards:")
         self.cards = event['info']['my_cards']
         self.cards.sort()
@@ -82,7 +87,8 @@ class TerminalInterface(Client):
         print(self.card_to_human(self.cards[scr[0] - scr[1] - 1]), end='.\n')
         if event['info']['choosing']:
             print(
-                "You need to choose color / accept or challenge / player to swap decks with")
+                "You need to choose color / accept or challenge \
+                 / player to swap decks with")
 
     def listen_for_input(self):
         while True:

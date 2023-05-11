@@ -14,11 +14,16 @@ DISCONNECT_MESSAGE = config.get('SYSTEM CONFIG', 'DISCONNECT_MESSAGE')
 
 
 class Bot(Client):
-    BOT_NAMES = ['Max', 'Ace', 'Jazz', 'Arrow', 'Bolt', 'Domino', 'Ninja', 'Flip', 'Spark', 'Byte', 'Whirl', 'Botz', 'Chico', 'Darling', 'Gigabyte', 'Matrix',
-                 'Nexus', 'Oracle', 'Quiver', 'Ranger', 'Phoenix', 'Speedy', 'Tangle', 'Upgrade', 'Vector', 'Wizard', 'Phantom', 'Zoom', 'Astro', 'Skillz', 'Luna']
+    BOT_NAMES = ['Max', 'Ace', 'Jazz', 'Arrow', 'Bolt', 'Domino', 'Ninja',
+                 'Flip', 'Spark', 'Byte', 'Whirl', 'Botz', 'Chico', 'Darling',
+                 'Gigabyte', 'Matrix', 'Nexus', 'Oracle', 'Quiver', 'Ranger',
+                 'Phoenix', 'Speedy', 'Tangle', 'Upgrade', 'Vector', 'Wizard',
+                 'Phantom', 'Zoom', 'Astro', 'Skillz', 'Luna']
 
-    def __init__(self, deque_lock: threading.Lock, *, conn=None, server=None, port=None, name=''):
-        super().__init__(deque_lock, conn=conn, server=server, port=port, name=name)
+    def __init__(self, deque_lock: threading.Lock, *,
+                 conn=None, server=None, port=None, name=''):
+        super().__init__(deque_lock,
+                         conn=conn, server=server, port=port, name=name)
         self.thread_update = threading.Thread(target=self.listen_for_updates)
         self.running = True
         self.thread_update.start()
@@ -44,8 +49,8 @@ class Bot(Client):
         top_card = Card(info["top_card_id"])
         top_card.color = info["top_card_color"]
         players = info["players"]
-        self.cards = info["my_cards"]
         choosing = info["choosing"]
+        self.cards = info["my_cards"]
         if turn != "you":
             self.process_send("uno", 1, 2)
             return
@@ -54,7 +59,8 @@ class Bot(Client):
             if top_card.type == "+4" and top_card.color != "black":
                 action = random.choice(["accept", "challenge"])
                 self.process_send(action)
-            elif (top_card.type == "+4" and top_card.color == "black") or top_card.type == "choose":
+            elif (top_card.type == "+4" and top_card.color == "black") \
+                 or top_card.type == "choose":
                 action = random.choice(["red", "yellow", "green", "blue"])
                 self.process_send(action)
             elif top_card.type == "7":
@@ -67,7 +73,8 @@ class Bot(Client):
         random.shuffle(excluding_system)
         for card_id in excluding_system:
             card = Card(card_id)
-            if card.type == top_card.type or card.color == top_card.color or card.color == "black":
+            if card.type == top_card.type or card.color == top_card.color \
+                                          or card.color == "black":
                 action = card.color + "_" + card.type
                 self.process_send(action)
                 if len(excluding_system) == 2:

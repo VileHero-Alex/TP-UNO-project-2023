@@ -8,7 +8,3 @@ class IllegalMove(Exception):
 
 class InputError(Exception):
     pass
-
-
-class Skip(Exception):
-    pass
